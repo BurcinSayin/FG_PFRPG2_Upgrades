@@ -1,0 +1,22 @@
+<root version="3.0" release="3">
+  <announcement text="Spell Attack Vs Dc" />
+
+  <properties>
+    <name>Spell Attack Vs DC</name>
+    <version>3</version>
+    <author>Burcin</author>
+    <description></description>
+
+    <ruleset><name>PFRPG2</name></ruleset>
+  </properties>
+
+  <base>
+
+<!--    <includefile source="campaign/record_spell_roll.xml" />-->
+
+    <string name="option_spvsdc_header">Spell Attack Vs DC</string>
+    <string name="option_spvsdc_logging_label">Log Location</string>
+
+    <script name="SpellAttackVsDcInjector" file="scripts/spell_attack_vsdc.lua" />
+  </base>
+</root>
