@@ -1,22 +1,24 @@
 <root version="3.0" release="3">
-  <announcement text="Spell Attack Vs Dc" />
+    <announcement text="Spell Attack Vs Dc"/>
 
-  <properties>
-    <name>Spell Attack Vs DC</name>
-    <version>3</version>
-    <author>Burcin</author>
-    <description></description>
+    <properties>
+        <name>Spell Attack Vs DC</name>
+        <version>3</version>
+        <author>Burcin</author>
+        <description></description>
 
-    <ruleset><name>PFRPG2</name></ruleset>
-  </properties>
+        <ruleset>
+            <name>PFRPG2</name>
+        </ruleset>
+    </properties>
 
-  <base>
-
-<!--    <includefile source="campaign/record_spell_roll.xml" />-->
-
-    <string name="option_spvsdc_header">Spell Attack Vs DC</string>
-    <string name="option_spvsdc_logging_label">Log Location</string>
-
-    <script name="SpellAttackVsDcInjector" file="scripts/spell_attack_vsdc.lua" />
-  </base>
+    <base>
+        <!--    <includefile source="campaign/record_spell_roll.xml" />-->
+        <string name="option_spvsdc_header">Spell Attack Vs DC</string>
+        <string name="option_spvsdc_logging_label">Log Location</string>
+        <string name="option_shield_cond_header">Shield Up Condition</string>
+        <string name="option_shield_cond_logging_label">Log Location</string>
+        <script name="SpellAttackVsDcInjector" file="scripts/spell_attack_vsdc.lua"/>
+        <script name="EffectConditionInjector" file="scripts/shield_up_affect_cond.lua"/>
+    </base>
 </root>
