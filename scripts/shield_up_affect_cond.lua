@@ -19,22 +19,25 @@ function customConditionFunc(rActor, nodeEffect, aConditions, rTarget, aIgnore)
 
     logToChat("CONDITION BASE RESULT : ", retVal);
 
-
-    local sLower = aConditions[1]:lower();
-    logToChat("FIRST CONDITON : ", sLower);
-    if sLower == 'shieldup' and retVal == true then
-        logToChat("Checking Shield UP");
-        local sNodeType, nodeActor = ActorManager.getTypeAndNode(rActor);
-        logToChat("Checking Shield UP , " , nodeActor);
-        if nodeActor then
-            local nShieldRaised = DB.getValue(nodeActor, "ac.sources.shieldraised", 0);
-            local nShieldBonus = DB.getValue(nodeActor, "ac.sources.shield", 0);
-            logToChat("Shield Status , Shield bonus : ", nShieldRaised,nShieldBonus);
-            if nShieldRaised <= 0 or nShieldBonus <= 0 then
-                retVal = false;
+    if aConditions[1] then
+        local sLower = aConditions[1]:lower();
+        logToChat("FIRST CONDITON : ", sLower);
+        if sLower == 'shieldup' and retVal == true then
+            logToChat("Checking Shield UP");
+            local sNodeType, nodeActor = ActorManager.getTypeAndNode(rActor);
+            logToChat("Checking Shield UP , " , nodeActor);
+            if nodeActor then
+                local nShieldRaised = DB.getValue(nodeActor, "ac.sources.shieldraised", 0);
+                local nShieldBonus = DB.getValue(nodeActor, "ac.sources.shield", 0);
+                logToChat("Shield Status , Shield bonus : ", nShieldRaised,nShieldBonus);
+                if nShieldRaised <= 0 or nShieldBonus <= 0 then
+                    retVal = false;
+                end
             end
         end
     end
+
+
 
     logToChat("CONDITION FINAL RESULT : ", retVal);
     return retVal;
