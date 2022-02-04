@@ -4,14 +4,15 @@
 --- DateTime: 9.06.2021 09:45
 ---
 
-local baseFunc = nil;
+local baseAttackFunc = nil;
+local baseSkillFunc = nil;
 local chatLogEnabled = true;
 
 -- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'reflex', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
 -- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'will', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
 -- { s'type' = s'cast', s'savetraits' = s'VsRef', s'subtype' = s'atk', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savemod' = #-1, s'dcstat' = s'intelligence', s'save' = s'fortitude', s'onmissdamage' = s'', s'crit' = #20, s'modifier' = #5, s'stat' = s'wisdom', s'label' = s'sddsdsf' }
 function onInit()
-    baseFunc = ActionAttack.getRoll;
+    baseAttackFunc = ActionAttack.getRoll;
     ActionAttack.getRoll = customFunc;
     OptionsManager.registerOption2("SpellVsDcLog", false, "option_spvsdc_header", "option_spvsdc_logging_label", "option_entry_cycler", { labels = "chat|console", values="chat|console", baselabel = "option_val_off", baseval="off", default="off"});
 end
@@ -19,6 +20,10 @@ end
 function customFunc(rActor, rAction)
 
     logToChat(rActor, rAction);
+
+    --local nValue = CharManager.getSkillValue(v, sSkillLookup, sSubSkill);
+    -- CharManager.getSkillNode(nodeChar, sSkill, sSpecialty);
+    --ActionSkill.performPartySheetRoll(nil, v, sSkill, nValue);
 
     local willModifyRoll = false;
     local vsDcKeyword = nil;
@@ -45,7 +50,8 @@ function customFunc(rActor, rAction)
     end
 
 
-    local rRoll = baseFunc(rActor, rAction);
+    local rRoll = baseAttackFunc(rActor, rAction);
+
 
     logToChat(rRoll);
 
