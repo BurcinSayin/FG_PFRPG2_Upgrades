@@ -6,6 +6,7 @@
 
 local baseAttackFunc = nil;
 local baseSkillFunc = nil;
+local baseVsDc = nil;
 local chatLogEnabled = true;
 
 -- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'reflex', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
@@ -14,40 +15,73 @@ local chatLogEnabled = true;
 function onInit()
     baseAttackFunc = ActionAttack.getRoll;
     ActionAttack.getRoll = customFunc;
+    ActionsManager.registerModHandler("vsdc", modVsDcCustom);
+
     OptionsManager.registerOption2("SpellVsDcLog", false, "option_spvsdc_header", "option_spvsdc_logging_label", "option_entry_cycler", { labels = "chat|console", values="chat|console", baselabel = "option_val_off", baseval="off", default="off"});
 end
 
+function customVsDc(draginfo, rActor, rAction)
+    logToChat("ActionVsDC.getRoll",draginfo, rActor, rAction);
+
+    return baseVsDc(draginfo, rActor, rAction);
+end
+
+
 function customFunc(rActor, rAction)
 
-    logToChat(rActor, rAction);
+    logToChat("ActionAttack.getRoll",rActor, rAction);
 
-    --local nValue = CharManager.getSkillValue(v, sSkillLookup, sSubSkill);
-    -- CharManager.getSkillNode(nodeChar, sSkill, sSpecialty);
-    --ActionSkill.performPartySheetRoll(nil, v, sSkill, nValue);
+    local bCtrlDown = Input.isControlPressed();
 
-    local willModifyRoll = false;
-    local vsDcKeyword = nil;
-
-    if rAction.type == "cast" and rAction.savemod == -1 then
-        logToChat("VsDc Roll mod started");
-        willModifyRoll = true;
-        if rAction.save == "reflex" then
-            vsDcKeyword = "REF";
-        elseif rAction.save == "fortitude" then
-            vsDcKeyword = "FORT";
-        elseif rAction.save == "will" then
-            vsDcKeyword = "WILL";
-        else
-            willModifyRoll = false;
-            logToChat("VsDc type undefined");
-        end
+    local aActionTraits = nil;
+    if bCtrlDown and rAction.type == "attack" then
+        aActionTraits = StringManager.split(rAction.traits, ",", true);
+    elseif rAction.type == "cast" then
+        aActionTraits = StringManager.split(rAction.savetraits, ",", true);
     end
 
 
-    if willModifyRoll == true then
-        rAction.vsdc = vsDcKeyword;
-        logToChat("VsDc Roll mod DONE");
+    local sSkillName = nil;
+    local sSkillAgainst = nil;
+    logToChat("SPELL TRAITS",aActionTraits);
+	if aActionTraits and #aActionTraits > 0 then
+		for _, sActionTrait in pairs(aActionTraits) do
+			if sActionTrait and sActionTrait ~= "" then
+                sSkillName,sSkillAgainst = string.match(sActionTrait, "SKILLVS:(%w+):VS:(%w+)");
+                if sSkillName and sSkillName ~= "" and sSkillAgainst and sSkillAgainst ~= "" then
+                    break;
+                end
+			end
+		end
+	end
+
+    if sSkillName and sSkillName ~= "" and sSkillAgainst and sSkillAgainst ~= "" then
+        return tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst);
     end
+
+    -- local willModifyRoll = false;
+    -- local vsDcKeyword = nil;
+
+    -- if rAction.type == "cast" and rAction.savemod == -1 then
+    --     logToChat("VsDc Roll mod started");
+    --     willModifyRoll = true;
+    --     if rAction.save == "reflex" then
+    --         vsDcKeyword = "REF";
+    --     elseif rAction.save == "fortitude" then
+    --         vsDcKeyword = "FORT";
+    --     elseif rAction.save == "will" then
+    --         vsDcKeyword = "WILL";
+    --     else
+    --         willModifyRoll = false;
+    --         logToChat("VsDc type undefined");
+    --     end
+    -- end
+
+
+    -- if willModifyRoll == true then
+    --     rAction.vsdc = vsDcKeyword;
+    --     logToChat("VsDc Roll mod DONE");
+    -- end
 
 
     local rRoll = baseAttackFunc(rActor, rAction);
@@ -57,6 +91,129 @@ function customFunc(rActor, rAction)
 
     return rRoll;
 
+end
+
+
+function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
+    local nSkillModifier, sProficency = CharManager.getSkillValue(rActor, sSkillName, nil);
+    if rAction.type == "attack" then
+        rAction.modifier = nSkillModifier + rAction.nWeaponBonus;
+    else
+        rAction.modifier = nSkillModifier;
+    end
+    rAction.sSourceAction = sSkillName;
+    rAction.sTargetDefense = sSkillAgainst;
+
+
+    local vsDcRoll = ActionVsDC.getRoll(nil,rActor,rAction);
+    vsDcRoll.sVsDcCustomSource = rAction.type;
+    logToChat("VsDCRoll:",vsDcRoll);
+    return vsDcRoll;
+end
+
+function modVsDcCustom(rSource, rTarget, rRoll)
+	logToChat("modVsDcCustom - starting.  = ", rSource, rTarget, rRoll);
+
+    if rRoll.sVsDcCustomSource and rRoll.sVsDcCustomSource ~= "" then
+        ActionVsDC.clearCritState(rSource);
+        if rRoll.sVsDcCustomSource == "attack" then
+            ActionSkill.modSkill(rSource, rTarget, rRoll);
+            applyMultiAttackMod(rSource, rTarget, rRoll);
+        else
+            ActionSkill.modSkill(rSource, rTarget, rRoll);
+        end
+    else
+        ActionVsDC.modVsDC(rSource, rTarget, rRoll);
+    end
+end
+
+function applyMultiAttackMod(rSource, rTarget, rRoll)
+    local aAddDesc = {};
+	local nAddMod = 0;
+    
+    -- Get weapon traits and properties to the roll structure.
+	local sTraits = "";
+	if rRoll.traits and rRoll.traits ~= "" then
+		sTraits = rRoll.traits:lower();
+	end
+
+	local bMultiAtk2 = ModifierStack.getModifierKey("ATT_MULTI_2");
+	local bMultiAtk3 = ModifierStack.getModifierKey("ATT_MULTI_3");
+
+    if Session.IsHost then
+		local wGMCT = Interface.findWindow("combattracker_host", "combattracker");
+		GlobalDebug.consoleObjects("modAttack.  Resetting CT MA buttons.  wGMCT = ", wGMCT);
+		if wGMCT then
+			wGMCT["ATT_MULTI_2"].setValue(0);
+			wGMCT["ATT_MULTI_3"].setValue(0);
+		end
+	else
+		local wGMCT = Interface.findWindow("combattracker_client", "combattracker");
+		GlobalDebug.consoleObjects("modAttack.  Resetting CT MA buttons.  wGMCT = ", wGMCT);
+		if wGMCT then
+			wGMCT["ATT_MULTI_2"].setValue(0);
+			wGMCT["ATT_MULTI_3"].setValue(0);
+		end	
+	end
+
+    local nMultiAttack2PenaltyEff = -5;
+	local nMultiAttack3PenaltyEff = -10;
+
+    if rSource then
+		-- Get MAP effects.  This assumes that agile is not included in this, and agile is 1 less for MAP2 and 2 less for MAP3.
+		if bMultiAtk2 then
+			local nMultiAttack2PenaltyTempEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP2"}, true, aAttackFilter, rTarget, nil, nil, true);	
+			if nMultiAttack2PenaltyTempEff ~= 0 and nMultiAttack2PenaltyTempEff ~= -5 then
+				bEffects = true;
+				--nAddMod = nAddMod + nMultiAttack2PenaltyEff + 5;
+				nMultiAttack2PenaltyEff = nMultiAttack2PenaltyTempEff;
+				GlobalDebug.consoleObjects("MAP2 effect = ", nMultiAttack2PenaltyEff);
+			else
+				local nMultiAttackPenaltyEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP"}, true, aAttackFilter, rTarget, nil, nil, true);
+				if nMultiAttackPenaltyEff ~= 0 and nMultiAttackPenaltyEff ~= -5 then
+					bEffects = true;
+					--nAddMod = nAddMod + nMultiAttackPenaltyEff + 5;
+					nMultiAttack2PenaltyEff = nMultiAttackPenaltyEff;
+					GlobalDebug.consoleObjects("MAP effect = ", nMultiAttackPenaltyEff);
+				end
+			end			
+		elseif bMultiAtk3 then
+			local nMultiAttack3PenaltyTempEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP3"}, true, aAttackFilter, rTarget, nil, nil, true);	
+			if nMultiAttack3PenaltyTempEff ~= 0 and nMultiAttack3PenaltyTempEff ~= -10 then
+				bEffects = true;
+				--nAddMod = nAddMod + nMultiAttack3PenaltyEff + 10;
+				nMultiAttack3PenaltyEff = nMultiAttack3PenaltyTempEff;
+				GlobalDebug.consoleObjects("MAP3 effect = ", nMultiAttack3PenaltyEff);
+			else
+				local nMultiAttackPenaltyEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP"}, true, aAttackFilter, rTarget, nil, nil, true);
+				if nMultiAttackPenaltyEff ~= 0 and nMultiAttackPenaltyEff ~= -5 then
+					bEffects = true;
+					--nAddMod = nAddMod + (nMultiAttackPenaltyEff * 2) + 10;
+					nMultiAttack3PenaltyEff = nMultiAttackPenaltyEff * 2;
+					GlobalDebug.consoleObjects("MAP effect = ", nMultiAttackPenaltyEff * 2);
+				end				
+			end				
+		end		
+	end
+
+    local nAgileMod = 0;
+	if string.find(sTraits, "agile") then
+		nAgileMod = 1;
+		table.insert(aAddDesc, "[Agile]")
+	end	
+	-- Set the final MAP penalty.
+	if bMultiAtk2 then
+		nAddMod = nAddMod + nMultiAttack2PenaltyEff + nAgileMod;
+		table.insert(aAddDesc, "[MULTI ATK #2: " .. nMultiAttack2PenaltyEff + nAgileMod .. "]");
+	elseif bMultiAtk3 then
+		nAddMod = nAddMod + nMultiAttack3PenaltyEff + (nAgileMod * 2);
+		table.insert(aAddDesc, "[MULTI ATK #3: " .. nMultiAttack3PenaltyEff  + (nAgileMod * 2) .. "]");
+	end	
+	
+	if #aAddDesc > 0 then
+		rRoll.sDesc = rRoll.sDesc .. " " .. table.concat(aAddDesc, " ");
+	end
+	rRoll.nMod = rRoll.nMod + nAddMod;
 end
 
 function logToChat(...)
