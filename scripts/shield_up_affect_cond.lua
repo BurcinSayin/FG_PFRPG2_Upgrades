@@ -48,7 +48,7 @@ function logToChat(...)
     if logOption == "chat" then
         Debug.chat(...);
     elseif logOption == "console" then
-        Debug.chat(...);
+        Debug.console(...);
     end
 
 end

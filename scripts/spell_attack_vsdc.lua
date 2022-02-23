@@ -4,6 +4,14 @@
 --- DateTime: 9.06.2021 09:45
 ---
 
+weapon_action_traits = {
+	["trip"] = "SKILLVS:Athletics:VS:REF",
+    ["grapple"] = "SKILLVS:Athletics:VS:FORT",
+	["disarm"] = "SKILLVS:Athletics:VS:REF",
+	["shove"] = "SKILLVS:Athletics:VS:FORT",
+    ["ranged trip"] = "SKILLVS:Athletics:VS:REF",
+};
+
 local baseAttackFunc = nil;
 local baseSkillFunc = nil;
 local baseVsDc = nil;
@@ -47,7 +55,15 @@ function customFunc(rActor, rAction)
 	if aActionTraits and #aActionTraits > 0 then
 		for _, sActionTrait in pairs(aActionTraits) do
 			if sActionTrait and sActionTrait ~= "" then
-                sSkillName,sSkillAgainst = string.match(sActionTrait, "SKILLVS:(%w+):VS:(%w+)");
+                if bCtrlDown and rAction.type == "attack" then
+                    local sWeaponTrait = weapon_action_traits[sActionTrait];
+                    if sWeaponTrait and sWeaponTrait ~= "" then
+                        sSkillName,sSkillAgainst = string.match(weapon_action_traits[sActionTrait], "SKILLVS:(%w+):VS:(%w+)");
+                        rAction.label = rAction.label .. " [" .. sActionTrait .. "]"; 
+                    end
+                else
+                    sSkillName,sSkillAgainst = string.match(sActionTrait, "SKILLVS:(%w+):VS:(%w+)");
+                end
                 if sSkillName and sSkillName ~= "" and sSkillAgainst and sSkillAgainst ~= "" then
                     break;
                 end
@@ -59,33 +75,7 @@ function customFunc(rActor, rAction)
         return tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst);
     end
 
-    -- local willModifyRoll = false;
-    -- local vsDcKeyword = nil;
-
-    -- if rAction.type == "cast" and rAction.savemod == -1 then
-    --     logToChat("VsDc Roll mod started");
-    --     willModifyRoll = true;
-    --     if rAction.save == "reflex" then
-    --         vsDcKeyword = "REF";
-    --     elseif rAction.save == "fortitude" then
-    --         vsDcKeyword = "FORT";
-    --     elseif rAction.save == "will" then
-    --         vsDcKeyword = "WILL";
-    --     else
-    --         willModifyRoll = false;
-    --         logToChat("VsDc type undefined");
-    --     end
-    -- end
-
-
-    -- if willModifyRoll == true then
-    --     rAction.vsdc = vsDcKeyword;
-    --     logToChat("VsDc Roll mod DONE");
-    -- end
-
-
     local rRoll = baseAttackFunc(rActor, rAction);
-
 
     logToChat(rRoll);
 
@@ -222,7 +212,7 @@ function logToChat(...)
     if logOption == "chat" then
         Debug.chat(...);
     elseif logOption == "console" then
-        Debug.chat(...);
+        Debug.console(...);
     end
 
 end
