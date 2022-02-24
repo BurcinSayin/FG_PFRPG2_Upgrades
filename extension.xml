@@ -2,10 +2,10 @@
     <announcement text="Spell Attack Vs Dc"/>
 
     <properties>
-        <name>Spell Attack Vs DC</name>
-        <version>3</version>
-        <author>Burcin</author>
-        <description></description>
+        <name>PFRPG2 Upgrades</name>
+        <version>4</version>
+        <author>Burcin Sayin</author>
+        <description>Utility functions for PFRPG2</description>
 
         <ruleset>
             <name>PFRPG2</name>
