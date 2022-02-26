@@ -66,6 +66,8 @@ function customFunc(rActor, rAction)
                     sSkillName,sSkillAgainst = string.match(sActionTrait, "SKILLVS:(%w+):VS:(%w+)");
                 end
                 if sSkillName and sSkillName ~= "" and sSkillAgainst and sSkillAgainst ~= "" then
+					sSkillName = StringManager.titleCase(sSkillName);
+					sSkillAgainst = StringManager.titleCase(sSkillAgainst);
                     break;
                 end
 			end
