@@ -56,6 +56,7 @@ function customFunc(rActor, rAction)
 		for _, sActionTrait in pairs(aActionTraits) do
 			if sActionTrait and sActionTrait ~= "" then
                 if bCtrlDown and rAction.type == "attack" then
+					sActionTrait = sActionTrait:lower();
                     local sWeaponTrait = weapon_action_traits[sActionTrait];
                     if sWeaponTrait and sWeaponTrait ~= "" then
                         sSkillName,sSkillAgainst = string.match(weapon_action_traits[sActionTrait], "SKILLVS:(%w+):VS:(%w+)");
@@ -96,7 +97,7 @@ function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
 
 
     local vsDcRoll = ActionVsDC.getRoll(nil,rActor,rAction);
-    vsDcRoll.sVsDcCustomSource = rAction.type;
+    vsDcRoll.sVsDcCustomSource = rAction.type .. rAction.order;
     logToChat("VsDCRoll:",vsDcRoll);
     return vsDcRoll;
 end
@@ -106,7 +107,7 @@ function modVsDcCustom(rSource, rTarget, rRoll)
 
     if rRoll.sVsDcCustomSource and rRoll.sVsDcCustomSource ~= "" then
         ActionVsDC.clearCritState(rSource);
-        if rRoll.sVsDcCustomSource == "attack" then
+        if StringManager.startsWith(rRoll.sVsDcCustomSource, "attack")  then
             ActionSkill.modSkill(rSource, rTarget, rRoll);
             applyMultiAttackMod(rSource, rTarget, rRoll);
         else
@@ -127,8 +128,8 @@ function applyMultiAttackMod(rSource, rTarget, rRoll)
 		sTraits = rRoll.traits:lower();
 	end
 
-	local bMultiAtk2 = ModifierStack.getModifierKey("ATT_MULTI_2");
-	local bMultiAtk3 = ModifierStack.getModifierKey("ATT_MULTI_3");
+	local bMultiAtk2 = ModifierStack.getModifierKey("ATT_MULTI_2") or (rRoll.sVsDcCustomSource == "attack2");
+	local bMultiAtk3 = ModifierStack.getModifierKey("ATT_MULTI_3") or (rRoll.sVsDcCustomSource == "attack3");
 
     if Session.IsHost then
 		local wGMCT = Interface.findWindow("combattracker_host", "combattracker");
