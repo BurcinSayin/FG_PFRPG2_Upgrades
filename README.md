@@ -32,3 +32,7 @@ In addion to spell attacks. If you perform an attack while holding down the "Ctr
 When "sieldup" keyword is used on condition check ( see: https://www.fantasygrounds.com/wiki/index.php/PFRPG2_Effects) it will activate the following effect if the char shield is raised. You can add this condiyional effects on characters, feat or item automations
 
 *Example:* **IF:sieldup;SAVE:2 reflex** will give tha character +2 reflex save bonus if/when shield is raised 
+
+![Shield with Shield Up Cond.](http://burcinsayin.xyz/dragon_slayer_shield.png)
+
+*Example:* In above example when shield is equipted and raised character gets +2 reflex save bonus
