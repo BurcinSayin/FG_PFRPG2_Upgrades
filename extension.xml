@@ -1,9 +1,9 @@
 <root version="3.0" release="3">
-    <announcement text="Spell Attack Vs Dc"/>
+    <announcement text="PFRPG2 Upgrades extension implements a bunch of featues for PFRPG2 ruleset. You can see the details in the following link\rhttps://www.fantasygrounds.com/forums/showthread.php?72738-WIP-extension-VsDC-rolling-trick-for-players-and-a-quot-shieldup-quot-condition" font="emotefont" />
 
     <properties>
         <name>PFRPG2 Upgrades</name>
-        <version>4</version>
+        <version>1.0</version>
         <author>Burcin Sayin</author>
         <description>Utility functions for PFRPG2</description>
 
@@ -13,7 +13,6 @@
     </properties>
 
     <base>
-        <!--    <includefile source="campaign/record_spell_roll.xml" />-->
         <string name="option_spvsdc_header">Spell Attack Vs DC</string>
         <string name="option_spvsdc_logging_label">Log Location</string>
         <string name="option_shield_cond_header">Shield Up Condition</string>
