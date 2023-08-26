@@ -13,9 +13,6 @@ weapon_action_traits = {
 };
 
 local baseAttackFunc = nil;
-local baseSkillFunc = nil;
-local baseVsDc = nil;
-local chatLogEnabled = true;
 
 -- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'reflex', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
 -- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'will', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
@@ -23,15 +20,35 @@ local chatLogEnabled = true;
 function onInit()
     baseAttackFunc = ActionAttack.getRoll;
     ActionAttack.getRoll = customFunc;
-    ActionsManager.registerModHandler("vsdc", modVsDcCustom);
+
+	ActionsManager.registerModHandler("vsdc", modVsDcCustom);
+	ActionsManager.registerResultHandler("vsdc", onVsDCCustom);
 
     OptionsManager.registerOption2("SpellVsDcLog", false, "option_spvsdc_header", "option_spvsdc_logging_label", "option_entry_cycler", { labels = "chat|console", values="chat|console", baselabel = "option_val_off", baseval="off", default="off"});
 end
 
-function customVsDc(draginfo, rActor, rAction)
-    logToChat("ActionVsDC.getRoll",draginfo, rActor, rAction);
+function onVsDCCustom(rSource, rTarget, rRoll)
+	local nTargetDC = 0;
+	
+	if rRoll.sVsDcCustomSource and rRoll.sVsDcCustomSource ~= "" then
+		local sTargetDC = string.match(rRoll.sTargetDefense, "Dc(%d+)");
+		if sTargetDC and sTargetDC ~= "" then
+			nTargetDC = tonumber(sTargetDC) or 0;
+		end
+    end
 
-    return baseVsDc(draginfo, rActor, rAction);
+	if nTargetDC > 0 then
+		local rMessage = ActionsManager.createActionMessage(rSource, rRoll);
+		local nTotal = ActionsManager.total(rRoll);
+		local sResult = GameSystem.getd20CheckResult(rRoll.aDice[1].result, nTotal, nTargetDC);
+		
+		if sResult ~= "" then
+			rMessage.text = rMessage.text .. " [" .. sResult .. "]";
+		end
+		Comm.deliverChatMessage(rMessage);
+	else
+		ActionVsDC.onVsDC(rSource, rTarget, rRoll);
+	end
 end
 
 
@@ -105,7 +122,7 @@ function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
 end
 
 function modVsDcCustom(rSource, rTarget, rRoll)
-	logToChat("modVsDcCustom - starting.  = ", rSource, rTarget, rRoll);
+	logToChat("modVsDcCustom - START.  = ", rSource, rTarget, rRoll);
 
     if rRoll.sVsDcCustomSource and rRoll.sVsDcCustomSource ~= "" then
         ActionVsDC.clearCritState(rSource);
@@ -118,6 +135,8 @@ function modVsDcCustom(rSource, rTarget, rRoll)
     else
         ActionVsDC.modVsDC(rSource, rTarget, rRoll);
     end
+
+	logToChat("modVsDcCustom - END.  = ", rSource, rTarget, rRoll);
 end
 
 function applyMultiAttackMod(rSource, rTarget, rRoll)
