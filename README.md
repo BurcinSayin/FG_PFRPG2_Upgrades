@@ -13,7 +13,7 @@ For ease of development I outputted the Debug logs chat or console. You can conf
 ## SpellAttack VsDc
 This is a special trait similar to the monster automation VsDC. It actually uses the PF2 VsDC system as a base already present in Fantasy Grounds. When this trait is added to spell attacks traits it will replace the spell attack roll with a skill check vs targets appropriate save/skill DC.
 
-The trait template is "SKILLVS:*skill_name*:VS:*dc_type*". You can put any Skill name starting with a capital letter in place of "*skill_name*" (i.e. Diplomacy, Intimidation) . You can put any skill name or Save type in place of "*dc_type*" ( i.e. REF,WILL, Perception)
+The trait template is "SKILLVS:*skill_name*:VS:*dc_type*". You can put any Skill name starting with a capital letter in place of "*skill_name*" (i.e. Diplomacy, Intimidation) . You can put any skill name, Save type or fixed DC in place of "*dc_type*" ( i.e. REF,WILL, Perception or DC20). 
 
 In addition to this, if your weapon has the appropriate trait ( like trip or shove) ctrl + double clicking attack roll on the actions tab (on character sheet) will roll the suitable VsDC skill check against your target
 
@@ -21,9 +21,9 @@ In addition to this, if your weapon has the appropriate trait ( like trip or sho
 Add a spell to the character on shar sheet on Actions tab.
 Open the cast action details and type VsDC keyword to the spell traits.
 
-![Cast Action](http://burcinsayin.xyz/cast_action.png)
+![Cast Action](https://s3.amazonaws.com/burcinsayin.xyz/cast_action.png)
 
-![Cast Action Details](http://burcinsayin.xyz/cast_action_details.png)
+![Cast Action Details](https://s3.amazonaws.com/burcinsayin.xyz/cast_action_details.png)
 
 **SKILLVS:Intimidation:VS:WILL**. With this the caster will roll diplomacy skill check against the Will save DC of his target
 
@@ -35,6 +35,6 @@ When "sieldup" keyword is used on condition check ( see: https://www.fantasygrou
 
 *Example:* **IF:sieldup;SAVE:2 reflex** will give the character +2 reflex save bonus if/when shield is raised 
 
-![Shield with Shield Up Cond.](http://burcinsayin.xyz/dragon_slayer_shield.png)
+![Shield with Shield Up Cond.](https://s3.amazonaws.com/dragon_slayer_shield.png)
 
 *Example:* In above example when shield is equipped and raised character gets +2 reflex save bonus
