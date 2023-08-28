@@ -19,7 +19,7 @@ In addition to this, if your weapon has the appropriate trait ( like trip or sho
 
 ### How to Use: 
 Add a spell to the character on shar sheet on Actions tab.
-Open the cast action details and type VsDC keyword to the spell traits. The cast action should have a "Attack Type" (NOT none) and have "Fixed" DC of negative number ( like Will Fixed -1 )
+Open the cast action details and type VsDC keyword to the spell traits. The cast action should have a "Attack Type" (NOT none) and have a save ( NOT none again) with "Fixed" DC of negative number ( like Will Fixed -1 )
 
 ![Cast Action](https://s3.amazonaws.com/burcinsayin.xyz/cast_action.png)
 
