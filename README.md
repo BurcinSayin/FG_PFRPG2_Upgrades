@@ -35,6 +35,6 @@ When "sieldup" keyword is used on condition check ( see: https://www.fantasygrou
 
 *Example:* **IF:sieldup;SAVE:2 reflex** will give the character +2 reflex save bonus if/when shield is raised 
 
-![Shield with Shield Up Cond.](https://s3.amazonaws.com/dragon_slayer_shield.png)
+![Shield with Shield Up Cond.](https://s3.amazonaws.com/burcinsayin.xyz/dragon_slayer_shield.png)
 
 *Example:* In above example when shield is equipped and raised character gets +2 reflex save bonus
