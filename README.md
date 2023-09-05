@@ -31,10 +31,15 @@ In addition to spell attacks. If you perform an attack while holding down the "C
 
 
 ## Shield Up Effect Condition
-When "sieldup" keyword is used on condition check ( see: https://www.fantasygrounds.com/wiki/index.php/PFRPG2_Effects) it will activate the following effect if the char shield is raised. You can add this conditional effects on characters, feat or item automations
+When "shieldup" keyword is used on condition check ( see: https://www.fantasygrounds.com/wiki/index.php/PFRPG2_Effects) it will activate the following effect if the char shield is raised. You can add this conditional effects on characters, feat or item automations
 
-*Example:* **IF:sieldup;SAVE:2 reflex** will give the character +2 reflex save bonus if/when shield is raised 
+*Example:* **IF:shieldup;SAVE:2 reflex** will give the character +2 reflex save bonus if/when shield is raised 
 
 ![Shield with Shield Up Cond.](https://s3.amazonaws.com/burcinsayin.xyz/dragon_slayer_shield.png)
 
 *Example:* In above example when shield is equipped and raised character gets +2 reflex save bonus
+
+## Weapon Trip, Shove, Disarm Trait Shortcut
+On PC character sheet action tab if you double click the attack roll holding the Ctrl key related action ( i.e. if it has the trip trait ) will be performed to the target ( with appropriate DC, skill, multi attack penalty etc. )
+
+![Weapon Skill Use](https://s3.amazonaws.com/burcinsayin.xyz/weapon_trait.png)
