@@ -14,9 +14,6 @@ weapon_action_traits = {
 
 local baseAttackFunc = nil;
 
--- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'reflex', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
--- { s'type' = s'cast', s'label' = s'sddsdsf', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savetraits' = s'VsRef', s'savemod' = #-1, s'dcstat' = s'intelligence', s'onmissdamage' = s'', s'save' = s'will', s'crit' = #20, s'stat' = s'wisdom', s'modifier' = #5 }
--- { s'type' = s'cast', s'savetraits' = s'VsRef', s'subtype' = s'atk', s'order' = #1, s'sTargeting' = s'', s'range' = s'R', s'savemod' = #-1, s'dcstat' = s'intelligence', s'save' = s'fortitude', s'onmissdamage' = s'', s'crit' = #20, s'modifier' = #5, s'stat' = s'wisdom', s'label' = s'sddsdsf' }
 function onInit()
     baseAttackFunc = ActionAttack.getRoll;
     ActionAttack.getRoll = customFunc;
@@ -68,7 +65,7 @@ function customFunc(rActor, rAction)
 
     local sSkillName = nil;
     local sSkillAgainst = nil;
-    logToChat("SPELL TRAITS",aActionTraits);
+    logToChat("ACTION TRAITS",aActionTraits);
 	if aActionTraits and #aActionTraits > 0 then
 		for _, sActionTrait in pairs(aActionTraits) do
 			if sActionTrait and sActionTrait ~= "" then
@@ -78,6 +75,7 @@ function customFunc(rActor, rAction)
                     if sWeaponTrait and sWeaponTrait ~= "" then
                         sSkillName,sSkillAgainst = string.match(weapon_action_traits[sActionTrait], "SKILLVS:(%w+):VS:(%w+)");
                         rAction.label = rAction.label .. " [" .. sActionTrait .. "]"; 
+						rAction.sAbilityTitle = StringManager.titleCase(sActionTrait);
                     end
                 else
                     sSkillName,sSkillAgainst = string.match(sActionTrait, "SKILLVS:(%w+):VS:(%w+)");
@@ -103,20 +101,44 @@ function customFunc(rActor, rAction)
 
 end
 
-
+-- { s'type' = s'attack', s'traits' = s'Uncommon, Trip', s'order' = #1, s'properties' = s'', s'range' = s'M', s'modifier' = #15, s'nWeaponBonus' = #0, s'stat' = s'strength', s'crit' = #20, s'label' = s'Khopesh' }
+-- { s'type' = s'skill', s'label' = s'Demoralize', s'order' = #1, s'sTargeting' = s'', s'sTargetDefense' = s'will', s'sAbilityTitle' = s'Demoralize', s'sSource' = s'combattracker.list.id-00001', s'modifier' = #0, s'traits' = s'Auditory, Concentrate, Emotion, Fear, Mental', s'sSourceAction' = s'Intimidation', s'meta' = s'', s'actionnodename' = s'charsheet.id-00007.activityset.id-00003.sections.id-00023.activities.id-00002.actions.id-00001' }
 function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
-    local nSkillModifier, sProficency = CharManager.getSkillValue(rActor, sSkillName, nil);
+
+	local rVsDcAction = { };
+	rVsDcAction.type = "skill";
+	rVsDcAction.order = rAction.order;
+	rVsDcAction.sSource = rActor.sCTNode;
+	rVsDcAction.sTargetDefense = sSkillAgainst;
+	rVsDcAction.sSourceAction = sSkillName;
+
+	rVsDcAction.label = rAction.label;
+	rVsDcAction.sAbilityTitle = rAction.sAbilityTitle;
+
+	-- local nSkillModifier, sProficency = CharManager.getSkillValue(rActor, sSkillName, nil);
     if rAction.type == "attack" then
-        rAction.modifier = nSkillModifier + rAction.nWeaponBonus;
-    else
-        rAction.modifier = nSkillModifier;
+		rVsDcAction.sActivityusage = "map";
+		rVsDcAction.traits = "attack";
+		if rAction.order == 2 then
+			ModifierManager.setKey("ATT_MULTI_2", true);
+			ModifierManager.setKey("ATT_MULTI_3", false);
+		elseif rAction.order == 3 then
+			ModifierManager.setKey("ATT_MULTI_2", false);
+			ModifierManager.setKey("ATT_MULTI_3", true);
+		end
     end
-    rAction.sSourceAction = sSkillName;
+
+	rAction.sSourceAction = sSkillName;
     rAction.sTargetDefense = sSkillAgainst;
 
+    local vsDcRoll = ActionVsDC.getRoll(nil,rActor,rVsDcAction);
+	vsDcRoll.sVsDcCustomType = rAction.type;
 
-    local vsDcRoll = ActionVsDC.getRoll(nil,rActor,rAction);
-    vsDcRoll.sVsDcCustomSource = rAction.type .. rAction.order;
+	if rAction.type == "attack" then
+		vsDcRoll.nVsDcCustomBonus = rAction.nWeaponBonus;
+		vsDcRoll.sVsDcCustomSkill = string.lower(StringManager.trim(sSkillName));
+    end
+
     logToChat("VsDCRoll:",vsDcRoll);
     return vsDcRoll;
 end
@@ -124,17 +146,29 @@ end
 function modVsDcCustom(rSource, rTarget, rRoll)
 	logToChat("modVsDcCustom - START.  = ", rSource, rTarget, rRoll);
 
-    if rRoll.sVsDcCustomSource and rRoll.sVsDcCustomSource ~= "" then
+    if rRoll.sVsDcCustomType and rRoll.sVsDcCustomType ~= "" then
         ActionVsDC.clearCritState(rSource);
-        if StringManager.startsWith(rRoll.sVsDcCustomSource, "attack")  then
-            ActionSkill.modSkill(rSource, rTarget, rRoll);
-            applyMultiAttackMod(rSource, rTarget, rRoll);
-        else
-            ActionSkill.modSkill(rSource, rTarget, rRoll);
+        if rRoll.sVsDcCustomType == "attack" then
+			local aSkillFilter = {};
+			aSkillFilter["skill"] = rRoll.sVsDcCustomSkill;
+			
+			local aSKILLEffectsUntyped, aSKILLEffectBonuses, aSKILLEffectPenalties, nEffectCount;
+			aSKILLEffectsUntyped, aSKILLEffectBonuses, aSKILLEffectPenalties, nEffectCount = EffectManagerPFRPG2.getEffectsBonusByType(rSource, {"SKILL"}, true, aSkillFilter, rTarget, nil, nil, true);
+
+			local nBonus = 0;
+			local nDelta = 0;
+			if aSKILLEffectBonuses["item"] then
+				nBonus = aSKILLEffectBonuses["item"];
+			end
+			if rRoll.nVsDcCustomBonus and rRoll.nVsDcCustomBonus > nBonus then
+				nDelta = rRoll.nVsDcCustomBonus - nBonus;
+				rRoll.nMod = rRoll.nMod + nDelta;
+				rRoll.sDesc = rRoll.sDesc .. " [WEAPON: " .. nDelta .. "]";
+			end
         end
-    else
-        ActionVsDC.modVsDC(rSource, rTarget, rRoll);
     end
+
+	ActionVsDC.modVsDC(rSource, rTarget, rRoll);
 
 	logToChat("modVsDcCustom - END.  = ", rSource, rTarget, rRoll);
 end
