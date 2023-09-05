@@ -18,12 +18,13 @@ function onInit()
     baseAttackFunc = ActionAttack.getRoll;
     ActionAttack.getRoll = customFunc;
 
-	ActionsManager.registerModHandler("vsdc", modVsDcCustom);
-	ActionsManager.registerResultHandler("vsdc", onVsDCCustom);
+	-- ActionsManager.registerModHandler("vsdc", modVsDcCustom);
+	-- ActionsManager.registerResultHandler("vsdc", onVsDCCustom);
 
     OptionsManager.registerOption2("SpellVsDcLog", false, "option_spvsdc_header", "option_spvsdc_logging_label", "option_entry_cycler", { labels = "chat|console", values="chat|console", baselabel = "option_val_off", baseval="off", default="off"});
 end
 
+-- DEPRECATED
 function onVsDCCustom(rSource, rTarget, rRoll)
 	local nTargetDC = 0;
 	
@@ -101,8 +102,8 @@ function customFunc(rActor, rAction)
 
 end
 
--- { s'type' = s'attack', s'traits' = s'Uncommon, Trip', s'order' = #1, s'properties' = s'', s'range' = s'M', s'modifier' = #15, s'nWeaponBonus' = #0, s'stat' = s'strength', s'crit' = #20, s'label' = s'Khopesh' }
--- { s'type' = s'skill', s'label' = s'Demoralize', s'order' = #1, s'sTargeting' = s'', s'sTargetDefense' = s'will', s'sAbilityTitle' = s'Demoralize', s'sSource' = s'combattracker.list.id-00001', s'modifier' = #0, s'traits' = s'Auditory, Concentrate, Emotion, Fear, Mental', s'sSourceAction' = s'Intimidation', s'meta' = s'', s'actionnodename' = s'charsheet.id-00007.activityset.id-00003.sections.id-00023.activities.id-00002.actions.id-00001' }
+-- { s'type' = s'skill', s'label' = s'High Jump', s'order' = #1, s'sTargeting' = s'self', s'sTargetDefense' = s'fixed', s'sAbilityTitle' = s'High Jump', s'sSource' = s'combattracker.list.id-00001', s'traits' = s'', s'meta' = s'', s'sSourceAction' = s'Athletics', s'actionnodename' = s'charsheet.id-00007.activityset.id-00003.sections.id-00018.activities.id-00004.actions.id-00001', s'fixeddc' = #30 }
+-- { s'type' = s'skill', s'label' = s'Hide', s'order' = #1, s'sTargeting' = s'', s'sTargetDefense' = s'perception', s'sAbilityTitle' = s'Hide', s'sSource' = s'combattracker.list.id-00001', s'modifier' = #0, s'traits' = s'Secret', s'sSourceAction' = s'Stealth', s'meta' = s'', s'actionnodename' = s'charsheet.id-00007.activityset.id-00003.sections.id-00029.activities.id-00002.actions.id-00001' }
 function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
 
 	local rVsDcAction = { };
@@ -126,6 +127,12 @@ function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
 			ModifierManager.setKey("ATT_MULTI_2", false);
 			ModifierManager.setKey("ATT_MULTI_3", true);
 		end
+	else
+		local sTargetDC = string.match(sSkillAgainst, "Dc(%d+)");
+		if sTargetDC and sTargetDC ~= "" then
+			rVsDcAction.sTargetDefense = "fixed";
+			rVsDcAction.fixeddc = tonumber(sTargetDC) or 0;
+		end
     end
 
 	rAction.sSourceAction = sSkillName;
@@ -143,6 +150,7 @@ function tranformActionAndRoll(rActor,rAction,sSkillName,sSkillAgainst)
     return vsDcRoll;
 end
 
+--DEPRECATED
 function modVsDcCustom(rSource, rTarget, rRoll)
 	logToChat("modVsDcCustom - START.  = ", rSource, rTarget, rRoll);
 
@@ -171,95 +179,6 @@ function modVsDcCustom(rSource, rTarget, rRoll)
 	ActionVsDC.modVsDC(rSource, rTarget, rRoll);
 
 	logToChat("modVsDcCustom - END.  = ", rSource, rTarget, rRoll);
-end
-
-function applyMultiAttackMod(rSource, rTarget, rRoll)
-    local aAddDesc = {};
-	local nAddMod = 0;
-    
-    -- Get weapon traits and properties to the roll structure.
-	local sTraits = "";
-	if rRoll.traits and rRoll.traits ~= "" then
-		sTraits = rRoll.traits:lower();
-	end
-
-	local bMultiAtk2 = ModifierStack.getModifierKey("ATT_MULTI_2") or (rRoll.sVsDcCustomSource == "attack2");
-	local bMultiAtk3 = ModifierStack.getModifierKey("ATT_MULTI_3") or (rRoll.sVsDcCustomSource == "attack3");
-
-    if Session.IsHost then
-		local wGMCT = Interface.findWindow("combattracker_host", "combattracker");
-		GlobalDebug.consoleObjects("modAttack.  Resetting CT MA buttons.  wGMCT = ", wGMCT);
-		if wGMCT then
-			wGMCT["ATT_MULTI_2"].setValue(0);
-			wGMCT["ATT_MULTI_3"].setValue(0);
-		end
-	else
-		local wGMCT = Interface.findWindow("combattracker_client", "combattracker");
-		GlobalDebug.consoleObjects("modAttack.  Resetting CT MA buttons.  wGMCT = ", wGMCT);
-		if wGMCT then
-			wGMCT["ATT_MULTI_2"].setValue(0);
-			wGMCT["ATT_MULTI_3"].setValue(0);
-		end	
-	end
-
-    local nMultiAttack2PenaltyEff = -5;
-	local nMultiAttack3PenaltyEff = -10;
-
-    if rSource then
-		-- Get MAP effects.  This assumes that agile is not included in this, and agile is 1 less for MAP2 and 2 less for MAP3.
-		if bMultiAtk2 then
-			local nMultiAttack2PenaltyTempEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP2"}, true, aAttackFilter, rTarget, nil, nil, true);	
-			if nMultiAttack2PenaltyTempEff ~= 0 and nMultiAttack2PenaltyTempEff ~= -5 then
-				bEffects = true;
-				--nAddMod = nAddMod + nMultiAttack2PenaltyEff + 5;
-				nMultiAttack2PenaltyEff = nMultiAttack2PenaltyTempEff;
-				GlobalDebug.consoleObjects("MAP2 effect = ", nMultiAttack2PenaltyEff);
-			else
-				local nMultiAttackPenaltyEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP"}, true, aAttackFilter, rTarget, nil, nil, true);
-				if nMultiAttackPenaltyEff ~= 0 and nMultiAttackPenaltyEff ~= -5 then
-					bEffects = true;
-					--nAddMod = nAddMod + nMultiAttackPenaltyEff + 5;
-					nMultiAttack2PenaltyEff = nMultiAttackPenaltyEff;
-					GlobalDebug.consoleObjects("MAP effect = ", nMultiAttackPenaltyEff);
-				end
-			end			
-		elseif bMultiAtk3 then
-			local nMultiAttack3PenaltyTempEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP3"}, true, aAttackFilter, rTarget, nil, nil, true);	
-			if nMultiAttack3PenaltyTempEff ~= 0 and nMultiAttack3PenaltyTempEff ~= -10 then
-				bEffects = true;
-				--nAddMod = nAddMod + nMultiAttack3PenaltyEff + 10;
-				nMultiAttack3PenaltyEff = nMultiAttack3PenaltyTempEff;
-				GlobalDebug.consoleObjects("MAP3 effect = ", nMultiAttack3PenaltyEff);
-			else
-				local nMultiAttackPenaltyEff = EffectManagerPFRPG2.getEffectsBonus(rSource, {"MAP"}, true, aAttackFilter, rTarget, nil, nil, true);
-				if nMultiAttackPenaltyEff ~= 0 and nMultiAttackPenaltyEff ~= -5 then
-					bEffects = true;
-					--nAddMod = nAddMod + (nMultiAttackPenaltyEff * 2) + 10;
-					nMultiAttack3PenaltyEff = nMultiAttackPenaltyEff * 2;
-					GlobalDebug.consoleObjects("MAP effect = ", nMultiAttackPenaltyEff * 2);
-				end				
-			end				
-		end		
-	end
-
-    local nAgileMod = 0;
-	if string.find(sTraits, "agile") then
-		nAgileMod = 1;
-		table.insert(aAddDesc, "[Agile]")
-	end	
-	-- Set the final MAP penalty.
-	if bMultiAtk2 then
-		nAddMod = nAddMod + nMultiAttack2PenaltyEff + nAgileMod;
-		table.insert(aAddDesc, "[MULTI ATK #2: " .. nMultiAttack2PenaltyEff + nAgileMod .. "]");
-	elseif bMultiAtk3 then
-		nAddMod = nAddMod + nMultiAttack3PenaltyEff + (nAgileMod * 2);
-		table.insert(aAddDesc, "[MULTI ATK #3: " .. nMultiAttack3PenaltyEff  + (nAgileMod * 2) .. "]");
-	end	
-	
-	if #aAddDesc > 0 then
-		rRoll.sDesc = rRoll.sDesc .. " " .. table.concat(aAddDesc, " ");
-	end
-	rRoll.nMod = rRoll.nMod + nAddMod;
 end
 
 function logToChat(...)
