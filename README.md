@@ -1,3 +1,7 @@
+# Project Status: Not Maintained
+
+**NOTICE: This project is no longer being maintained.** It was created for a specific PFRPG2 campaign and is now archived. Feel free to fork and modify it for your own use, but no further updates or bug fixes will be provided.
+
 This extension started as a tool to make my PFRPG2 campaign more easy to run. 
 
 Configuration:
